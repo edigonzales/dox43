@@ -86,16 +86,18 @@ public class DocxGenerator {
             System.out.println(PhysicalFonts.getPhysicalFonts());
             System.out.println("***********");
             
-            PhysicalFont font = PhysicalFonts.get("frutiger lt com 55 roman");
-            PhysicalFont fontBold = PhysicalFonts.get("Cadastra-Bold");
-            PhysicalFont fontItalic = PhysicalFonts.get("Cadastra-Italic");
-            PhysicalFont fontBoldItalic = PhysicalFonts.get("Cadastra-BoldItalic");
+            // May be different on Linux (in Docker container).
+            PhysicalFont font = PhysicalFonts.get("frutiger lt com roman");
+//            PhysicalFont font = PhysicalFonts.get("frutiger lt com 55 roman");
+            PhysicalFont fontBold = PhysicalFonts.get("frutiger lt com black");
+            PhysicalFont fontItalic = PhysicalFonts.get("frutiger lt com italic");
+            PhysicalFont fontBoldItalic = PhysicalFonts.get("frutiger lt com black italic");
             System.out.println("*************************" + font.getName() + "************");
             System.out.println("*************************" + font.getEmbeddedURI() + "************");
 
 //            PhysicalFont font = PhysicalFonts.getPhysicalFont(wordMLPackage, "Cadastra");
-            fontMapper.put("Frutiger LT Com 55 Roman", font);
-//            fontMapper.registerRegularForm("Frutiger LT Com 55 Roman", font);
+//            fontMapper.put("Frutiger LT Com 55 Roman", font);
+            fontMapper.registerRegularForm("Frutiger LT Com 55 Roman", font);
             fontMapper.registerBoldForm("Frutiger LT Com 55 Roman", fontBold);
             fontMapper.registerItalicForm("Frutiger LT Com 55 Roman", fontItalic);
             fontMapper.registerBoldItalicForm("Frutiger LT Com 55 Roman", fontBoldItalic);
