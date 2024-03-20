@@ -1,14 +1,20 @@
 package ch.so.agi.dox43;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.HashMap;
 
+import org.apache.fop.apps.FopFactory;
+import org.apache.fop.apps.MimeConstants;
 import org.docx4j.Docx4J;
 import org.docx4j.convert.out.FOSettings;
+import org.docx4j.convert.out.fopconf.Fop;
 import org.docx4j.model.datastorage.migration.VariablePrepare;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.docx4j.openpackaging.parts.PartName;
+import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
 import org.docx4j.fonts.Mapper;
 import org.docx4j.fonts.PhysicalFont;
@@ -25,7 +31,8 @@ import org.springframework.stereotype.Service;
 public class DocxGenerator {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private static final String TEMPLATE_NAME = "template_frutiger_v3.docx";
+    //private static final String TEMPLATE_NAME = "template_frutiger_v3.docx";
+    private static final String TEMPLATE_NAME = "template_frutiger_bild_V2.docx";
     
     public byte[] generateDocxFileFromTemplate() throws Exception {
         InputStream templateInputStream = this.getClass().getClassLoader().getResourceAsStream(TEMPLATE_NAME);
@@ -43,6 +50,17 @@ public class DocxGenerator {
         variables.put("message", "Top of the Pops.");
 
         documentPart.variableReplace(variables);
+        
+        
+        System.out.println("**11111111111111111111111111");
+        System.out.println("**"+wordMLPackage.getParts().getParts());
+        
+        BinaryPart imagePart = (BinaryPart) wordMLPackage.getParts().get(new PartName("/word/media/image1.png"));
+        InputStream newImageStream = this.getClass().getClassLoader().getResourceAsStream("replacement.png");//new FileInputStream(new java.io.File("new_image.png"));
+        imagePart.setBinaryData(newImageStream);
+
+        
+        
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
@@ -65,9 +83,16 @@ public class DocxGenerator {
         variables.put("lastName", "Ziegler");
         variables.put("salutation", "Herr");
         variables.put("message", "Top of the Pops.");
-
         documentPart.variableReplace(variables);
 
+        // https://stackoverflow.com/questions/26598730/how-to-save-images-from-a-word-document-in-docx4j
+        // Enzippen und schauen, wie das Bild im Zip heisst. Der Name des Bildes müsste dann der Parametername 
+        // in der API sein.
+        BinaryPart imagePart = (BinaryPart) wordMLPackage.getParts().get(new PartName("/word/media/image1.png"));
+        InputStream newImageStream = this.getClass().getClassLoader().getResourceAsStream("replacement.png");//new FileInputStream(new java.io.File("new_image.png"));
+        imagePart.setBinaryData(newImageStream);
+
+        
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
         wordMLPackage.save(outputStream);
@@ -87,6 +112,7 @@ public class DocxGenerator {
             System.out.println("***********");
             
             // May be different on Linux (in Docker container).
+            // Oder so: https://github.com/plutext/docx4j/blob/master/docx4j-samples-resources/src/main/resources/fop-substitutions.xml
             PhysicalFont font = PhysicalFonts.get("frutiger lt com roman");
 //            PhysicalFont font = PhysicalFonts.get("frutiger lt com 55 roman");
             PhysicalFont fontBold = PhysicalFonts.get("frutiger lt com black");
@@ -113,7 +139,14 @@ public class DocxGenerator {
             
 //            FOSettings foSettings = Docx4J.createFOSettings();
 //            foSettings.setfo
-
+            
+//            FOSettings foSettings = new FOSettings(wordMLPackage);
+//            foSettings.setApacheFopMime(FOSettings.INTERNAL_FO_MIME);
+//            foSettings.setFoDumpFile(new java.io.File("/Users/stefan/tmp/fo.fo"));
+            
+//            FileOutputStream fos = new FileOutputStream(new java.io.File("/Users/stefan/tmp/output.xslfo"));
+//            Docx4J.toFO(foSettings, fos, Docx4J.FLAG_EXPORT_PREFER_XSL);
+            
             Docx4J.toPDF(wordMLPackage,os);
             os.flush();
             os.close();
