@@ -4,7 +4,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +21,11 @@ import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.PartName;
 import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
+import org.jodconverter.core.DocumentConverter;
+import org.jodconverter.core.document.DefaultDocumentFormatRegistry;
+import org.jodconverter.core.document.DocumentFormat;
+import org.jodconverter.core.office.OfficeManager;
+import org.jodconverter.local.LocalConverter;
 import org.docx4j.fonts.Mapper;
 import org.docx4j.fonts.PhysicalFont;
 import org.docx4j.fonts.PhysicalFonts;
@@ -37,157 +44,237 @@ public class DocxGenerator {
     @Value("${app.templateDirectory}")
     private String templateDirectory;
 
+    private final OfficeManager officeManager;
+
+//    @Value("${app.workDirectory}")
+//    private String workDirectory;
+//
+//    @Value("${app.folderPrefix}")
+//    private String folderPrefix;
+
     //private static final String TEMPLATE_NAME = "template_frutiger_v3.docx";
-    private static final String TEMPLATE_NAME = "template_frutiger_bild_V2.docx";
+//    private static final String TEMPLATE_NAME = "template_frutiger_bild_V2.docx";
     
-    public byte[] generateDocxFileFromTemplate(String docTemplate, Map<String,String> docVariables) throws Exception {
+    public DocxGenerator(final OfficeManager officeManager) {
+        this.officeManager = officeManager;
+    }
+    
+    public byte[] generateFileFromTemplate(String format, String docTemplate, Map<String,String> docVariables) throws Exception {
         File templateFile = Paths.get(templateDirectory, docTemplate).toFile();
 
         WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(templateFile);
         MainDocumentPart documentPart = wordMLPackage.getMainDocumentPart();
 
         HashMap<String, String> genericVariables = new HashMap<>();
+        HashMap<String, String> wmsVariables = new HashMap<>();
         for (Map.Entry<String, String> entry : docVariables.entrySet()) {
+            String paramName = entry.getKey().substring(entry.getKey().indexOf(".")+1);
             if (!entry.getKey().toLowerCase().contains("wmsinputparam.")) {
-                String paramName = entry.getKey().substring(entry.getKey().indexOf(".")+1);
                 genericVariables.put(paramName, entry.getValue());
-            } 
+            } else if (entry.getKey().toLowerCase().contains("wmsinputparam.")) {                
+                wmsVariables.put(paramName, entry.getValue());   
+            }
+        }
+        
+        // replace "simple" variables
+        VariablePrepare.prepare(wordMLPackage);
+        documentPart.variableReplace(genericVariables);
+        
+        // replace image
+        for (Map.Entry<String, String> entry : wmsVariables.entrySet()) {
+           String imageUrl = entry.getValue();
+           try(InputStream inputStream = new URL(imageUrl).openStream()) {
+               BinaryPart imagePart = (BinaryPart) wordMLPackage.getParts().get(new PartName("/word/media/"+entry.getKey()+".png"));
+               imagePart.setBinaryData(inputStream);
+           } catch (IOException e) {
+               e.printStackTrace();
+               logger.error("Error downloading the image: " + e.getMessage());
+           }
         }
 
-        
-        VariablePrepare.prepare(wordMLPackage);
-        documentPart.variableReplace(docVariables);
+        if (format.equalsIgnoreCase(AppConstants.PARAM_CONST_PDF)) {
+            // TODO: irgendwie parametrisierbar machen. Mit Mapping-Datei?
+            /*
+            if (true) {
+                Mapper fontMapper = new BestMatchingMapper();
+                wordMLPackage.setFontMapper(fontMapper);
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        wordMLPackage.save(outputStream);
+                PhysicalFont font = PhysicalFonts.get("frutiger lt com roman");
+                PhysicalFont fontBold = PhysicalFonts.get("frutiger lt com black");
+                PhysicalFont fontItalic = PhysicalFonts.get("frutiger lt com italic");
+                PhysicalFont fontBoldItalic = PhysicalFonts.get("frutiger lt com black italic");
+                fontMapper.registerRegularForm("Frutiger LT Com 55 Roman", font);
+                fontMapper.registerBoldForm("Frutiger LT Com 55 Roman", fontBold);
+                fontMapper.registerItalicForm("Frutiger LT Com 55 Roman", fontItalic);
+                fontMapper.registerBoldItalicForm("Frutiger LT Com 55 Roman", fontBoldItalic);
+            }
 
-        return outputStream.toByteArray();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream(); 
+            Docx4J.toPDF(wordMLPackage, baos);
+            baos.flush();
+            baos.close();
+            
+            return baos.toByteArray();
+            */
+            
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    
+            final DocumentFormat targetFormat = DefaultDocumentFormatRegistry.getFormatByExtension(AppConstants.PARAM_CONST_PDF);
+            System.out.println(targetFormat);
+            
+            // TODO Qualität:
+            // https://github.com/jodconverter/jodconverter/issues/160
+            // https://github.com/jodconverter/jodconverter/blob/master/jodconverter-local/src/main/java/org/jodconverter/local/LocalConverter.java#L90
+            // https://github.com/jodconverter/jodconverter-samples/blob/main/samples/spring-boot-rest/src/main/java/org/jodconverter/sample/rest/ConverterController.java#L142
+
+            // TODO Bean? https://github.com/jodconverter/jodconverter/issues/291
+            // https://github.com/jodconverter/jodconverter/blob/master/jodconverter-spring-boot-starter/src/main/java/org/jodconverter/boot/autoconfigure/JodConverterLocalAutoConfiguration.java
+            final DocumentConverter converter =
+                    LocalConverter.builder()
+                            .officeManager(officeManager)
+//                            .loadProperties(loadProperties)
+//                            .storeProperties(storeProperties)
+                            .build();
+            
+            converter.convert(new FileInputStream(new File("/Users/stefan/Downloads/document_21.docx"))).to(baos).as(targetFormat).execute();
+
+            
+            return baos.toByteArray();
+            
+        } else if (format.equalsIgnoreCase(AppConstants.PARAM_CONST_DOCX)) {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            wordMLPackage.save(outputStream);
+            
+            return outputStream.toByteArray();            
+        } else {
+            throw new IllegalArgumentException("unsupported format <"+format+">");
+        }
     }
     
     
-    public byte[] generateDocxFileFromTemplate_1() throws Exception {
-        InputStream templateInputStream = this.getClass().getClassLoader().getResourceAsStream(TEMPLATE_NAME);
-
-        WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(templateInputStream);
-
-        MainDocumentPart documentPart = wordMLPackage.getMainDocumentPart();
-
-        VariablePrepare.prepare(wordMLPackage);
-
-        HashMap<String, String> variables = new HashMap<>();
-        variables.put("firstName", "Stefan");
-        variables.put("lastName", "Ziegler");
-        variables.put("salutation", "Herr");
-        variables.put("message", "Top of the Pops.");
-
-        documentPart.variableReplace(variables);
-        
-        
-        System.out.println("**11111111111111111111111111");
-        System.out.println("**"+wordMLPackage.getParts().getParts());
-        
-        BinaryPart imagePart = (BinaryPart) wordMLPackage.getParts().get(new PartName("/word/media/image1.png"));
-        InputStream newImageStream = this.getClass().getClassLoader().getResourceAsStream("replacement.png");//new FileInputStream(new java.io.File("new_image.png"));
-        imagePart.setBinaryData(newImageStream);
-
-        
-        
-
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-
-        wordMLPackage.save(outputStream);
-
-        return outputStream.toByteArray();
-      }
-
-    public void generatePdfFileFromTemplate() throws Exception {
-        InputStream templateInputStream = this.getClass().getClassLoader().getResourceAsStream(TEMPLATE_NAME);
-
-        WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(templateInputStream);
-
-        MainDocumentPart documentPart = wordMLPackage.getMainDocumentPart();
-
-        VariablePrepare.prepare(wordMLPackage);
-
-        HashMap<String, String> variables = new HashMap<>();
-        variables.put("firstName", "Stefan");
-        variables.put("lastName", "Ziegler");
-        variables.put("salutation", "Herr");
-        variables.put("message", "Top of the Pops.");
-        documentPart.variableReplace(variables);
-
-        // https://stackoverflow.com/questions/26598730/how-to-save-images-from-a-word-document-in-docx4j
-        // Enzippen und schauen, wie das Bild im Zip heisst. Der Name des Bildes müsste dann der Parametername 
-        // in der API sein.
-        BinaryPart imagePart = (BinaryPart) wordMLPackage.getParts().get(new PartName("/word/media/image1.png"));
-        InputStream newImageStream = this.getClass().getClassLoader().getResourceAsStream("replacement.png");//new FileInputStream(new java.io.File("new_image.png"));
-        imagePart.setBinaryData(newImageStream);
-
-        
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-
-        wordMLPackage.save(outputStream);
-
-        try {
-
-            String outputfilepath = "/Users/stefan/tmp/message.pdf";
-            FileOutputStream os = new FileOutputStream(outputfilepath);
-
-//            Mapper fontMapper = new IdentityPlusMapper();
-            Mapper fontMapper = new BestMatchingMapper();
-            wordMLPackage.setFontMapper(fontMapper);
-            
-            // Um docx4j-konforme Font-Namen herauszufinden.
-            System.out.println("***********");
-            System.out.println(PhysicalFonts.getPhysicalFonts());
-            System.out.println("***********");
-            
-            // May be different on Linux (in Docker container).
-            // Oder so: https://github.com/plutext/docx4j/blob/master/docx4j-samples-resources/src/main/resources/fop-substitutions.xml
-            PhysicalFont font = PhysicalFonts.get("frutiger lt com roman");
-//            PhysicalFont font = PhysicalFonts.get("frutiger lt com 55 roman");
-            PhysicalFont fontBold = PhysicalFonts.get("frutiger lt com black");
-            PhysicalFont fontItalic = PhysicalFonts.get("frutiger lt com italic");
-            PhysicalFont fontBoldItalic = PhysicalFonts.get("frutiger lt com black italic");
-            System.out.println("*************************" + font.getName() + "************");
-            System.out.println("*************************" + font.getEmbeddedURI() + "************");
-
-//            PhysicalFont font = PhysicalFonts.getPhysicalFont(wordMLPackage, "Cadastra");
-//            fontMapper.put("Frutiger LT Com 55 Roman", font);
-            fontMapper.registerRegularForm("Frutiger LT Com 55 Roman", font);
-            fontMapper.registerBoldForm("Frutiger LT Com 55 Roman", fontBold);
-            fontMapper.registerItalicForm("Frutiger LT Com 55 Roman", fontItalic);
-            fontMapper.registerBoldItalicForm("Frutiger LT Com 55 Roman", fontBoldItalic);
-                        
-            //PhysicalFont font2 = PhysicalFonts.getPhysicalFonts().get("Arial");
-            PhysicalFont font2 = PhysicalFonts.get("Arial");
-//            System.out.println("*************************" + font2 + "************");
-            fontMapper.put("Calibri", font2);
-            
-//            final FOSettings foSettings = Docx4J.createFOSettings();
-//            foSettings.setWmlPackage(wordMLPackage);
-
-            
-//            FOSettings foSettings = Docx4J.createFOSettings();
-//            foSettings.setfo
-            
-//            FOSettings foSettings = new FOSettings(wordMLPackage);
-//            foSettings.setApacheFopMime(FOSettings.INTERNAL_FO_MIME);
-//            foSettings.setFoDumpFile(new java.io.File("/Users/stefan/tmp/fo.fo"));
-            
-//            FileOutputStream fos = new FileOutputStream(new java.io.File("/Users/stefan/tmp/output.xslfo"));
-//            Docx4J.toFO(foSettings, fos, Docx4J.FLAG_EXPORT_PREFER_XSL);
-            
-            Docx4J.toPDF(wordMLPackage,os);
-            os.flush();
-            os.close();
-        } catch (Throwable e) {
-
-            e.printStackTrace();
-        } 
-
-
-      }
+//    public byte[] generateDocxFileFromTemplate_1() throws Exception {
+//        InputStream templateInputStream = this.getClass().getClassLoader().getResourceAsStream(TEMPLATE_NAME);
+//
+//        WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(templateInputStream);
+//
+//        MainDocumentPart documentPart = wordMLPackage.getMainDocumentPart();
+//
+//        VariablePrepare.prepare(wordMLPackage);
+//
+//        HashMap<String, String> variables = new HashMap<>();
+//        variables.put("firstName", "Stefan");
+//        variables.put("lastName", "Ziegler");
+//        variables.put("salutation", "Herr");
+//        variables.put("message", "Top of the Pops.");
+//
+//        documentPart.variableReplace(variables);
+//        
+//        
+//        System.out.println("**11111111111111111111111111");
+//        System.out.println("**"+wordMLPackage.getParts().getParts());
+//        
+//        BinaryPart imagePart = (BinaryPart) wordMLPackage.getParts().get(new PartName("/word/media/image1.png"));
+//        InputStream newImageStream = this.getClass().getClassLoader().getResourceAsStream("replacement.png");//new FileInputStream(new java.io.File("new_image.png"));
+//        imagePart.setBinaryData(newImageStream);
+//
+//        
+//        
+//
+//        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+//
+//        wordMLPackage.save(outputStream);
+//
+//        return outputStream.toByteArray();
+//      }
+//
+//    public void generatePdfFileFromTemplate() throws Exception {
+//        InputStream templateInputStream = this.getClass().getClassLoader().getResourceAsStream(TEMPLATE_NAME);
+//
+//        WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(templateInputStream);
+//
+//        MainDocumentPart documentPart = wordMLPackage.getMainDocumentPart();
+//
+//        VariablePrepare.prepare(wordMLPackage);
+//
+//        HashMap<String, String> variables = new HashMap<>();
+//        variables.put("firstName", "Stefan");
+//        variables.put("lastName", "Ziegler");
+//        variables.put("salutation", "Herr");
+//        variables.put("message", "Top of the Pops.");
+//        documentPart.variableReplace(variables);
+//
+//        // https://stackoverflow.com/questions/26598730/how-to-save-images-from-a-word-document-in-docx4j
+//        // Enzippen und schauen, wie das Bild im Zip heisst. Der Name des Bildes müsste dann der Parametername 
+//        // in der API sein.
+//        BinaryPart imagePart = (BinaryPart) wordMLPackage.getParts().get(new PartName("/word/media/image1.png"));
+//        InputStream newImageStream = this.getClass().getClassLoader().getResourceAsStream("replacement.png");//new FileInputStream(new java.io.File("new_image.png"));
+//        imagePart.setBinaryData(newImageStream);
+//
+//        
+//        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+//
+//        wordMLPackage.save(outputStream);
+//
+//        try {
+//
+//            String outputfilepath = "/Users/stefan/tmp/message.pdf";
+//            FileOutputStream os = new FileOutputStream(outputfilepath);
+//
+////            Mapper fontMapper = new IdentityPlusMapper();
+//            Mapper fontMapper = new BestMatchingMapper();
+//            wordMLPackage.setFontMapper(fontMapper);
+//            
+//            // Um docx4j-konforme Font-Namen herauszufinden.
+//            System.out.println("***********");
+//            System.out.println(PhysicalFonts.getPhysicalFonts());
+//            System.out.println("***********");
+//            
+//            // May be different on Linux (in Docker container).
+//            // Oder so: https://github.com/plutext/docx4j/blob/master/docx4j-samples-resources/src/main/resources/fop-substitutions.xml
+//            PhysicalFont font = PhysicalFonts.get("frutiger lt com roman");
+////            PhysicalFont font = PhysicalFonts.get("frutiger lt com 55 roman");
+//            PhysicalFont fontBold = PhysicalFonts.get("frutiger lt com black");
+//            PhysicalFont fontItalic = PhysicalFonts.get("frutiger lt com italic");
+//            PhysicalFont fontBoldItalic = PhysicalFonts.get("frutiger lt com black italic");
+//            System.out.println("*************************" + font.getName() + "************");
+//            System.out.println("*************************" + font.getEmbeddedURI() + "************");
+//
+////            PhysicalFont font = PhysicalFonts.getPhysicalFont(wordMLPackage, "Cadastra");
+////            fontMapper.put("Frutiger LT Com 55 Roman", font);
+//            fontMapper.registerRegularForm("Frutiger LT Com 55 Roman", font);
+//            fontMapper.registerBoldForm("Frutiger LT Com 55 Roman", fontBold);
+//            fontMapper.registerItalicForm("Frutiger LT Com 55 Roman", fontItalic);
+//            fontMapper.registerBoldItalicForm("Frutiger LT Com 55 Roman", fontBoldItalic);
+//                        
+//            //PhysicalFont font2 = PhysicalFonts.getPhysicalFonts().get("Arial");
+//            PhysicalFont font2 = PhysicalFonts.get("Arial");
+////            System.out.println("*************************" + font2 + "************");
+//            fontMapper.put("Calibri", font2);
+//            
+////            final FOSettings foSettings = Docx4J.createFOSettings();
+////            foSettings.setWmlPackage(wordMLPackage);
+//
+//            
+////            FOSettings foSettings = Docx4J.createFOSettings();
+////            foSettings.setfo
+//            
+////            FOSettings foSettings = new FOSettings(wordMLPackage);
+////            foSettings.setApacheFopMime(FOSettings.INTERNAL_FO_MIME);
+////            foSettings.setFoDumpFile(new java.io.File("/Users/stefan/tmp/fo.fo"));
+//            
+////            FileOutputStream fos = new FileOutputStream(new java.io.File("/Users/stefan/tmp/output.xslfo"));
+////            Docx4J.toFO(foSettings, fos, Docx4J.FLAG_EXPORT_PREFER_XSL);
+//            
+//            Docx4J.toPDF(wordMLPackage,os);
+//            os.flush();
+//            os.close();
+//        } catch (Throwable e) {
+//
+//            e.printStackTrace();
+//        } 
+//
+//
+//      }
 
     
 }

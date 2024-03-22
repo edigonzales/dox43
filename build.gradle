@@ -27,6 +27,9 @@ dependencies {
     implementation 'org.docx4j:docx4j-JAXB-ReferenceImpl:11.4.11'
     implementation 'org.docx4j:docx4j-export-fo:11.4.11'
     
+    implementation 'org.jodconverter:jodconverter-local-lo:4.4.7'
+    implementation 'org.jodconverter:jodconverter-spring-boot-starter:4.4.7'
+
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
