@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -38,31 +39,34 @@ public class MainController {
     */
     // http://localhost:8080/reports/docx?DocTemplate=template_frutiger_bild.docx&StringInputParam.salutation=Herr&StringInputParam.firstName=Stefan&StringInputParam.lastName=Ziegler&StringInputParam.message=Hallo Welt&WmsInputParam.Image1=https%3A%2F%2Fgeo.so.ch%2Fows%2Fsomap%3FSERVICE%3DWMS%26VERSION%3D1.3.0%26REQUEST%3DGetMap%26FORMAT%3Dimage%252Fpng%26TRANSPARENT%3Dtrue%26LAYERS%3Dch.so.agi.av.bodenbedeckung_einzelobjekte%26STYLES%3D%26SRS%3DEPSG%253A2056%26CRS%3DEPSG%253A2056%26TILED%3Dfalse%26OPACITIES%3D255%26__t%3D1711045775028%26DPI%3D180%26WIDTH%3D3471%26HEIGHT%3D1318%26BBOX%3D2607777.2060933253%252C1228230.6308076198%252C2608006.798280825%252C1228317.811015953
     @GetMapping(path = "/reports/{format}")
-    public ResponseEntity<?> getReport(@PathVariable("format") String format, @RequestParam Map<String, String> queryParameters) {
+    public ResponseEntity<?> getReport(@PathVariable("format") String format,
+            @RequestParam(name = "DocTemplate", required = true) String docTemplate,
+            @RequestParam Map<String, String> queryParameters) {
+        
+        HashMap<String, String> docVariables = new HashMap<>();
         for (Map.Entry<String, String> entry : queryParameters.entrySet()) {
-            System.out.println(entry.getKey() + " / " + entry.getValue());
+            if (entry.getKey().toLowerCase().contains("inputparam.")) {
+                
+                // TODO: substring logik erst im Service, da ich mit WMS auch dealen muss.
+                String paramName = entry.getKey().substring(entry.getKey().indexOf(".")+1);
+                docVariables.put(paramName, entry.getValue());
+            } 
         }
-
         
-        
-//        byte[] result;
-//
-//        try {
-//          result = docxGenerator.generateDocxFileFromTemplate();
-//        } catch (Exception e) {
-//          e.printStackTrace();
-//          return ResponseEntity
-//                  .internalServerError()
-//                  .body("Please contact service provider.");
-//        }
-//        
-//        return ResponseEntity
-//                .ok().header("content-disposition", "attachment; filename=\"message.docx\"")
-//                //.contentLength(image.length)
-//                .contentType(MediaType.APPLICATION_OCTET_STREAM).body(result);                
-
-        
-        return new ResponseEntity<String>("foo", HttpStatus.OK);
+        byte[] result = null;
+        try {
+            result = docxGenerator.generateDocxFileFromTemplate(docTemplate, docVariables);
+          } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity
+                    .internalServerError()
+                    .body("Please contact service provider.");
+          }
+          
+          return ResponseEntity
+                  .ok().header("content-disposition", "attachment; filename=\"document.docx\"")
+                  .contentLength(result.length)
+                  .contentType(MediaType.APPLICATION_OCTET_STREAM).body(result);                
     }
 
     @GetMapping(path = "/reports-pdf")

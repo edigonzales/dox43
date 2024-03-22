@@ -1,10 +1,13 @@
 package ch.so.agi.dox43;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.fop.apps.FopFactory;
 import org.apache.fop.apps.MimeConstants;
@@ -24,17 +27,45 @@ import org.docx4j.fonts.IdentityPlusMapper;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class DocxGenerator {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
+    @Value("${app.templateDirectory}")
+    private String templateDirectory;
+
     //private static final String TEMPLATE_NAME = "template_frutiger_v3.docx";
     private static final String TEMPLATE_NAME = "template_frutiger_bild_V2.docx";
     
-    public byte[] generateDocxFileFromTemplate() throws Exception {
+    public byte[] generateDocxFileFromTemplate(String docTemplate, Map<String,String> docVariables) throws Exception {
+        File templateFile = Paths.get(templateDirectory, docTemplate).toFile();
+
+        WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(templateFile);
+        MainDocumentPart documentPart = wordMLPackage.getMainDocumentPart();
+
+        HashMap<String, String> genericVariables = new HashMap<>();
+        for (Map.Entry<String, String> entry : docVariables.entrySet()) {
+            if (!entry.getKey().toLowerCase().contains("wmsinputparam.")) {
+                String paramName = entry.getKey().substring(entry.getKey().indexOf(".")+1);
+                genericVariables.put(paramName, entry.getValue());
+            } 
+        }
+
+        
+        VariablePrepare.prepare(wordMLPackage);
+        documentPart.variableReplace(docVariables);
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        wordMLPackage.save(outputStream);
+
+        return outputStream.toByteArray();
+    }
+    
+    
+    public byte[] generateDocxFileFromTemplate_1() throws Exception {
         InputStream templateInputStream = this.getClass().getClassLoader().getResourceAsStream(TEMPLATE_NAME);
 
         WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(templateInputStream);
