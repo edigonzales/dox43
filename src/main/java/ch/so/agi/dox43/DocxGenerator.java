@@ -51,6 +51,9 @@ public class DocxGenerator {
     @Value("${app.losslessCompression}")
     private boolean losslessCompression;
 
+    // TODO: Falls man von aussen steuern will, welchen PDF-Konverter man verwendet, 
+    // braucht es ein PdfConverter-Interface, das jeweils implementiert wird. Und
+    // conditional beans.
     public DocxGenerator(@Qualifier("libreOfficePdfConverter") DocumentConverter documentConverter) {
         this.documentConverter = documentConverter;
     }
