@@ -41,7 +41,7 @@ public class MainController {
     @GetMapping(path = "/reports/{format}")
     public ResponseEntity<?> getReport(@PathVariable("format") String format,
             @RequestParam(name = "DocTemplate", required = true) String docTemplate,
-            @RequestParam Map<String, String> queryParameters) {
+            @RequestParam Map<String, String> queryParameters) throws Exception {
         
         if(!format.equals(AppConstants.PARAM_CONST_DOCX) && !format.equals(AppConstants.PARAM_CONST_PDF)) {
             throw new IllegalArgumentException("unsupported format <"+format+">");
@@ -54,16 +54,7 @@ public class MainController {
             } 
         }
         
-        // TODO Globales Exceptionhandling?
-        byte[] result = null;
-        try {
-            result = docxGenerator.generateFileFromTemplate(format, docTemplate, docVariables);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity
-                    .internalServerError()
-                    .body("Please contact service provider.");
-        }
+        byte[] result = docxGenerator.generateFileFromTemplate(format, docTemplate, docVariables);
           
         return ResponseEntity
                 .ok().header("content-disposition", "attachment; filename=\"document."+format+"\"")
