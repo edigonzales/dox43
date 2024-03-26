@@ -8,8 +8,11 @@ import java.io.OutputStream;
 import org.jodconverter.core.DocumentConverter;
 import org.jodconverter.core.document.DefaultDocumentFormatRegistry;
 import org.jodconverter.core.document.DocumentFormat;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
+@ConditionalOnProperty(name = "app.feature.new", havingValue = "libreoffice")
+@Service
 public class LibreOfficePdfConverter implements PdfConverter {
 
     private DocumentConverter documentConverter;

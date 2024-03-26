@@ -9,9 +9,14 @@ import org.docx4j.Docx4J;
 import org.docx4j.fonts.PhysicalFont;
 import org.docx4j.fonts.PhysicalFonts;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Service;
 import org.docx4j.fonts.BestMatchingMapper;
 import org.docx4j.fonts.Mapper;
 
+//@ConditionalOnProperty(name = "app.pdfConverter", havingValue = "true")
+@ConditionalOnProperty(name = "app.feature.new", havingValue = "xlsfo", matchIfMissing = false)
+@Service
 public class XlsFoPdfConverter implements PdfConverter {
 
     private Mapper fontMapper = null;
