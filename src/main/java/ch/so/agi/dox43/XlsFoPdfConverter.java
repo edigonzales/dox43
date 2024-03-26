@@ -15,7 +15,7 @@ import org.docx4j.fonts.BestMatchingMapper;
 import org.docx4j.fonts.Mapper;
 
 //@ConditionalOnProperty(name = "app.pdfConverter", havingValue = "true")
-@ConditionalOnProperty(name = "app.feature.new", havingValue = "xlsfo", matchIfMissing = false)
+@ConditionalOnProperty(name = "app.pdfConverter", havingValue = "xlsfo", matchIfMissing = false)
 @Service
 public class XlsFoPdfConverter implements PdfConverter {
 

@@ -41,8 +41,7 @@ public class DocxGenerator {
     @Value("${app.templateDirectory}")
     private String templateDirectory;
 
-    //private DocumentConverter documentConverter;
-//    private PdfConverter pdfConverter;
+    private PdfConverter pdfConverter;
 
     @Value("${app.workDirectory}")
     private String workDirectory;
@@ -52,20 +51,10 @@ public class DocxGenerator {
     
     @Value("${app.losslessCompression}")
     private boolean losslessCompression;
-    
-//    @Autowired(required=true)
-//    private PdfConverter pdfConverter;
-
-    // TODO: Falls man von aussen steuern will, welchen PDF-Konverter man verwendet, 
-    // braucht es ein PdfConverter-Interface, das jeweils implementiert wird. Und
-    // conditional beans.
-//    public DocxGenerator(@Qualifier("libreOfficePdfConverter") DocumentConverter documentConverter) {
-//        this.documentConverter = documentConverter;
-//    }
-    
-//    public DocxGenerator(PdfConverter pdfConverter) {
-//        this.pdfConverter = pdfConverter;
-//    }
+        
+    public DocxGenerator(PdfConverter pdfConverter) {
+        this.pdfConverter = pdfConverter;
+    }
     
     public byte[] generateFileFromTemplate(String format, String docTemplate, Map<String,String> docVariables) throws Exception {
         File templateFile = Paths.get(templateDirectory, docTemplate).toFile();
@@ -104,41 +93,9 @@ public class DocxGenerator {
             Path tmpFolder = Files.createTempDirectory(Paths.get(workDirectory), folderPrefix);
             File tmpFile = Paths.get(tmpFolder.toFile().getAbsolutePath(), "document.docx").toFile();
             wordMLPackage.save(tmpFile);
-            
-            // TODO: irgendwie parametrisierbar machen. Mit Mapping-Datei?
-            // Prüfen, ob das unter Linux (im verwendeten Dockerimage) funktioniert?
-            /*
-            if (true) {
-                Mapper fontMapper = new BestMatchingMapper();
-                wordMLPackage.setFontMapper(fontMapper);
-
-                PhysicalFont font = PhysicalFonts.get("frutiger lt com roman");
-                PhysicalFont fontBold = PhysicalFonts.get("frutiger lt com black");
-                PhysicalFont fontItalic = PhysicalFonts.get("frutiger lt com italic");
-                PhysicalFont fontBoldItalic = PhysicalFonts.get("frutiger lt com black italic");
-                fontMapper.registerRegularForm("Frutiger LT Com 55 Roman", font);
-                fontMapper.registerBoldForm("Frutiger LT Com 55 Roman", fontBold);
-                fontMapper.registerItalicForm("Frutiger LT Com 55 Roman", fontItalic);
-                fontMapper.registerBoldItalicForm("Frutiger LT Com 55 Roman", fontBoldItalic);
-            }
-
-            ByteArrayOutputStream baos = new ByteArrayOutputStream(); 
-            Docx4J.toPDF(wordMLPackage, baos);
-            baos.flush();
-            baos.close();
-
-            return baos.toByteArray();
-            */
-                  
-//            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-//            byte[] result = pdfConverter.convert(tmpFile, baos);
-
-//            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-//            final DocumentFormat targetFormat = DefaultDocumentFormatRegistry.getFormatByExtension(AppConstants.PARAM_CONST_PDF);
-//            documentConverter.convert(new FileInputStream(tmpFile)).to(baos).as(targetFormat).execute();
-
-//            return result;          
-            return null;
+                        
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            return pdfConverter.convert(tmpFile, baos);                  
         } else if (format.equalsIgnoreCase(AppConstants.PARAM_CONST_DOCX)) {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             wordMLPackage.save(outputStream);

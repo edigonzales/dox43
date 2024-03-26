@@ -23,14 +23,8 @@ import com.sun.star.beans.PropertyValue;
 @EnableScheduling
 public class Dox43Application {
     
-//    @Value("${app.losslessCompression}")
-//    private boolean losslessCompression;
-//
-//    @Value("${app.pdfConverter}")
-//    private String pdfConverter;
-
-    @Autowired
-    PdfConverter pdfConverter;
+//    @Autowired
+//    PdfConverter pdfConverter;
 
     
     public static void main(String[] args) {
