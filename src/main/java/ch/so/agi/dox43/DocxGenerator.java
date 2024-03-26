@@ -40,7 +40,8 @@ public class DocxGenerator {
     @Value("${app.templateDirectory}")
     private String templateDirectory;
 
-    private DocumentConverter documentConverter;
+    //private DocumentConverter documentConverter;
+    private PdfConverter pdfConverter;
 
     @Value("${app.workDirectory}")
     private String workDirectory;
@@ -54,8 +55,12 @@ public class DocxGenerator {
     // TODO: Falls man von aussen steuern will, welchen PDF-Konverter man verwendet, 
     // braucht es ein PdfConverter-Interface, das jeweils implementiert wird. Und
     // conditional beans.
-    public DocxGenerator(@Qualifier("libreOfficePdfConverter") DocumentConverter documentConverter) {
-        this.documentConverter = documentConverter;
+//    public DocxGenerator(@Qualifier("libreOfficePdfConverter") DocumentConverter documentConverter) {
+//        this.documentConverter = documentConverter;
+//    }
+    
+    public DocxGenerator(PdfConverter pdfConverter) {
+        this.pdfConverter = pdfConverter;
     }
     
     public byte[] generateFileFromTemplate(String format, String docTemplate, Map<String,String> docVariables) throws Exception {
@@ -117,15 +122,18 @@ public class DocxGenerator {
             Docx4J.toPDF(wordMLPackage, baos);
             baos.flush();
             baos.close();
-            
+
             return baos.toByteArray();
             */
-            
+                  
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            final DocumentFormat targetFormat = DefaultDocumentFormatRegistry.getFormatByExtension(AppConstants.PARAM_CONST_PDF);
-            documentConverter.convert(new FileInputStream(tmpFile)).to(baos).as(targetFormat).execute();
+            byte[] result = pdfConverter.convert(tmpFile, baos);
 
-            return baos.toByteArray();            
+//            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+//            final DocumentFormat targetFormat = DefaultDocumentFormatRegistry.getFormatByExtension(AppConstants.PARAM_CONST_PDF);
+//            documentConverter.convert(new FileInputStream(tmpFile)).to(baos).as(targetFormat).execute();
+
+            return result;          
         } else if (format.equalsIgnoreCase(AppConstants.PARAM_CONST_DOCX)) {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             wordMLPackage.save(outputStream);

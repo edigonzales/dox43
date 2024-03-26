@@ -9,6 +9,7 @@ import org.jodconverter.local.LocalConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -26,7 +27,21 @@ public class Dox43Application {
     public static void main(String[] args) {
         SpringApplication.run(Dox43Application.class, args);
     }
+    
+    
+    @ConditionalOnProperty(name = "app.pdfConverter", havingValue = "xlsfo", matchIfMissing = false)
+    @Bean
+    PdfConverter xlsFoPdfConverter() {
+        return new XlsFoPdfConverter();
+    } 
 
+    @ConditionalOnProperty(name = "app.pdfConverter", havingValue = "libreoffice", matchIfMissing = false)
+    @Bean
+    PdfConverter libreOfficePdfConverter(OfficeManager officeManager) {
+        return new LibreOfficePdfConverter(documentConverter(officeManager));
+    }
+
+    @ConditionalOnProperty(name = "app.pdfConverter", havingValue = "libreoffice", matchIfMissing = false)
     @Bean(name = "libreOfficePdfConverter")
     DocumentConverter documentConverter(OfficeManager officeManager) {
         // https://github.com/jodconverter/jodconverter/issues/160
