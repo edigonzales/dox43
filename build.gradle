@@ -23,12 +23,21 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
     
     implementation 'org.docx4j:docx4j-JAXB-ReferenceImpl:11.4.11'
-    implementation 'org.docx4j:docx4j-export-fo:11.4.11'
+    implementation ('org.docx4j:docx4j-export-fo:11.4.11') //{
+        //exclude group: 'org.apache.xmlgraphics', module: 'xmlgraphics'
+    //}
+    
+    implementation 'net.sf.saxon:Saxon-HE:12.4'
+    implementation 'org.apache.xmlgraphics:fop:2.7'
+    implementation 'net.sf.offo:fop-hyph:2.0' 
     
     implementation 'org.jodconverter:jodconverter-local-lo:4.4.7'
     implementation 'org.jodconverter:jodconverter-spring-boot-starter:4.4.7'
+
+    runtimeOnly 'org.postgresql:postgresql'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
