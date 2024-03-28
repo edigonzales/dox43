@@ -11,5 +11,17 @@ services:
       - type: volume
         source: postgresql_data_edit
         target: /var/lib/postgresql/data
+  pub-db:
+    image: sogis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: pub
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "54322:5432"
+    volumes:
+      - type: volume
+        source: postgresql_data_pub
+        target: /var/lib/postgresql/data
 volumes:
   postgresql_data_edit:
+  postgresql_data_pub:

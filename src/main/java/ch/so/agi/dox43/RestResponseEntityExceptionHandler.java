@@ -13,7 +13,7 @@ public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionH
     @ExceptionHandler(value = { Exception.class })
     protected ResponseEntity<Object> handleConflict(Exception ex, WebRequest request) {
         ex.printStackTrace();
-        String bodyOfResponse = "Please contact service provider.";
+        String bodyOfResponse = "Please contact service provider.\n"+ex.getMessage();
         return handleExceptionInternal(ex, bodyOfResponse, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);
     }
 }

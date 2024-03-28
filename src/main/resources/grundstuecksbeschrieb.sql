@@ -1,4 +1,3 @@
---2608026
 WITH grundstueck AS 
 (
     SELECT 
@@ -13,7 +12,7 @@ WITH grundstueck AS
     FROM 
         agi_mopublic_pub.mopublic_grundstueck AS g
     WHERE 
-        ST_Intersects(ST_SetSRID(ST_MakePoint(:xcoord, 1228149), 2056), g.geometrie)
+        ST_Intersects(ST_SetSRID(ST_MakePoint(CAST(:x AS integer), CAST(:y AS integer)), 2056), g.geometrie)
 )
 ,
 bodenbedeckung AS 
