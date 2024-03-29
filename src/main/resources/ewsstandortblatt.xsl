@@ -199,7 +199,7 @@
                     </fo:block-container>
 
                     <fo:block-container page-break-before="always">
-                        <fo:block margin-top="6mm" font-weight="700">Kartenausschnitt des angeklickten Standorts</fo:block>
+                        <fo:block margin-top="0mm" font-weight="700">Kartenausschnitt des angeklickten Standorts</fo:block>
 
                         <fo:block margin-top="3mm" background-color="transparent" padding="0mm" space-before="0mm">
                         <fo:external-graphic border="1pt solid black" margin="0mm" padding="0mm" space-before="0mm" vertical-align="top" width="175mm" height="140mm" scaling="uniform" content-width="scale-to-fit" content-height="scale-to-fit" fox:alt-text="Kartenausschnitt">
