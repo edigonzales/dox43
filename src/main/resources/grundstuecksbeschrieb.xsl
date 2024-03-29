@@ -82,10 +82,31 @@
                 </fo:static-content>
 
                 <fo:static-content flow-name="xsl-region-after">
+                    <fo:table table-layout="fixed" width="100%" margin-top="1mm" font-size="8pt">
+                    <fo:table-column column-width="50%"/>
+                    <fo:table-column column-width="50%"/>
+                    <fo:table-body>
+                        <fo:table-row>
+                        <fo:table-cell>
+                            <fo:block>
+                            <xsl:value-of select="format-dateTime(current-dateTime(),'[Y0001]-[M01]-[D01] [H01]:[m01]:[s01]')"/>
+                            </fo:block>
+                        </fo:table-cell>
+                        <fo:table-cell text-align="right">
+                            <fo:block>Seite <fo:page-number/>/<fo:page-number-citation-last ref-id="my-sequence-id"/></fo:block>
+                        </fo:table-cell>
+                        </fo:table-row>
+                    </fo:table-body>
+                    </fo:table>
+                </fo:static-content>
+
+                <!--
+                <fo:static-content flow-name="xsl-region-after">
                     <fo:block text-align="center" background-color="transparent">
                         <fo:block>Seite <fo:page-number/>/<fo:page-number-citation-last ref-id="my-sequence-id"/></fo:block>
                     </fo:block>
                 </fo:static-content>
+                -->
 
                 <fo:flow flow-name="xsl-region-body">
                     <fo:block-container wrap-option="wrap" hyphenate="false" hyphenation-character="-" font-weight="700" font-size="14pt">

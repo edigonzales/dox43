@@ -55,7 +55,7 @@ public class MainController {
         }
         
         byte[] result = docxGenerator.generateFileFromTemplate(format, docTemplate, docVariables);
-          
+
         return ResponseEntity
                 .ok().header("content-disposition", "attachment; filename=\"document."+format+"\"")
                 .contentLength(result.length)

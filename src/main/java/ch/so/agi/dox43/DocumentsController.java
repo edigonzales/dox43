@@ -1,9 +1,14 @@
 package ch.so.agi.dox43;
 
+import java.io.File;
 import java.util.Map;
+import java.io.InputStream;
+import java.io.FileInputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,8 +36,13 @@ public class DocumentsController {
 
         logger.debug("document: "+document);
         
-        documentGenerator.generateFileFromSql(document, queryParameters);
-        
-        return null;
+//        File outFile = documentGenerator.generateFileFromSql(document, queryParameters);
+        byte[] outFile = documentGenerator.generateFileFromSql(document, queryParameters);
+//        InputStream is = new FileInputStream(outFile);
+
+        return ResponseEntity
+                .ok().header("content-disposition", "attachment; filename=" + document)
+                .contentLength(outFile.length)
+                .contentType(MediaType.APPLICATION_PDF).body(outFile);                
     }
 }
