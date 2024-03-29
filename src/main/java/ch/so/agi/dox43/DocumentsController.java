@@ -30,6 +30,7 @@ public class DocumentsController {
     // https://geo.so.ch/api/v1/document/grundstuecksbeschrieb?feature=21361869&x=2608068.8582796236&y=1228108.4535374695&crs=EPSG%3A2056
     
     // http://localhost:8080/documents/grundstuecksbeschrieb?x=2608026&y=1228149
+    // http://localhost:8080/documents/ewsstandortblatt?x=2608026&y=1228149
     @GetMapping(path = "/documents/{document}")
     public ResponseEntity<?> getDocument(@PathVariable("document") String document,
             @RequestParam Map<String, String> queryParameters) throws Exception {
@@ -41,7 +42,7 @@ public class DocumentsController {
 //        InputStream is = new FileInputStream(outFile);
 
         return ResponseEntity
-                .ok().header("content-disposition", "attachment; filename=" + document)
+                .ok().header("content-disposition", "attachment; filename=" + document + ".pdf")
                 .contentLength(outFile.length)
                 .contentType(MediaType.APPLICATION_PDF).body(outFile);                
     }
