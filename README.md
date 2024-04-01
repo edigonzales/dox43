@@ -10,10 +10,11 @@ java -jar /Users/stefan/apps/ili2pg-5.1.0/ili2pg-5.1.0.jar --dbhost localhost --
 
 Für lokales Entwickeln mit Docker Image:
 
-```
-https://www.baeldung.com/spring-properties-file-outside-jar#load-config-environment-var
-```
 
 ```
 java -jar build/libs/dox43-0.0.LOCALBUILD.jar --spring.profiles.active=dev --spring.config.location=application-dev.properties,classpath:application.properties
+```
+
+```
+docker run -p 8080:8080 -e SPRING_CONFIG_LOCATION=file:///config/application-dev.properties,classpath:application.properties -e SPRING_PROFILES_ACTIVE=dev -v $PWD:/config sogis/dox43
 ```

@@ -15,6 +15,10 @@ compileJava {
     options.compilerArgs.addAll(['--release', '21'])
 }
 
+bootJar {
+   archiveFileName = archiveBaseName.get() + "-" + version + "-exec.jar"
+}
+
 repositories {
     mavenCentral()
 }
