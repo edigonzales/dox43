@@ -16,12 +16,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class DocumentsController {
+public class ReportsController {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
     
-    private DocumentsGenerator documentGenerator;
+    private ReportsGenerator documentGenerator;
     
-    public DocumentsController(DocumentsGenerator documentGenerator) {
+    public ReportsController(ReportsGenerator documentGenerator) {
         this.documentGenerator = documentGenerator;
     }
     

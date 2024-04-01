@@ -49,7 +49,7 @@ import net.sf.saxon.s9api.XsltExecutable;
 import net.sf.saxon.s9api.XsltTransformer;
 
 @Service
-public class DocumentsGenerator {
+public class ReportsGenerator {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final JdbcTemplateFactory jdbcTemplateFactory;
@@ -63,7 +63,7 @@ public class DocumentsGenerator {
     @Value("${app.folderPrefix}")
     private String folderPrefix;
 
-    public DocumentsGenerator(JdbcTemplateFactory jdbcTemplateFactory) {
+    public ReportsGenerator(JdbcTemplateFactory jdbcTemplateFactory) {
         this.jdbcTemplateFactory = jdbcTemplateFactory;
     }
     
