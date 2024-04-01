@@ -124,7 +124,6 @@ public class ReportsGenerator {
 
         synchronized(this) {
             FopFactory fopFactory = FopFactory.newInstance(fopXconfFile);
-//            OutputStream outPdf = new BufferedOutputStream(new FileOutputStream(pdfFile)); 
             Fop fop = fopFactory.newFop(MimeConstants.MIME_PDF, outPdf);
 
             trans.setDestination(new SAXDestination(fop.getDefaultHandler()));
@@ -133,9 +132,7 @@ public class ReportsGenerator {
             trans.close();
         }
         
-//        return pdfFile;
         return outPdf.toByteArray();
-
     }
     
     private byte[] generateXlsxReport(String reportName, Map<String,String> queryParameters, Path outputDirectory, String dbKey) throws IOException {
@@ -144,7 +141,7 @@ public class ReportsGenerator {
             throw new IllegalArgumentException("database key not found: " + dbKey);
         }
 
-        // To be defined. Alle sql-Files eruieren.
+        // Alle sql-Files eruieren.
         List<Path> sqlFiles = new ArrayList<Path>();
         try (Stream<Path> walk = Files.walk(Paths.get(configDirectory))) {
             sqlFiles = walk
@@ -165,7 +162,6 @@ public class ReportsGenerator {
                     }) 
                     .collect(Collectors.toList());        
         }
-        
         logger.debug(sqlFiles.toString());
 
         Map<String, Object> data = new HashMap<>();
@@ -177,7 +173,6 @@ public class ReportsGenerator {
                         
             String sqlFileName = sqlFile.getFileName().toString().substring(sqlFile.getFileName().toString().lastIndexOf("-")+1);
             String sqlContextName = sqlFileName.replace(".sql", "");
-                    
             logger.debug(sqlContextName);
             
             data.put(sqlContextName, result);
@@ -242,6 +237,4 @@ public class ReportsGenerator {
         logger.debug("copyResource: " + outFile.toString());
         return outFile.toFile();
     }
-
-    
 }
