@@ -55,9 +55,6 @@ public class JxlsController {
         
         Path outputDirectory = Files.createTempDirectory(Paths.get(workDirectory), folderPrefix);
 
-        // IDEE:
-        // - Support mehrere SQL-Abfragen: irgendwie über file name convention, z.B. "fubar-xxx.sql", "fubar-yyy.sql".
-        // Hier kann man eine Logik definieren wie "startsWith".
         
 //        List<Employee> employees = new ArrayList<>();
 //        

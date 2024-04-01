@@ -7,9 +7,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.xml.transform.stream.StreamSource;
 
@@ -24,6 +28,8 @@ import org.apache.fop.apps.Fop;
 import org.apache.fop.apps.FopFactory;
 import org.apache.fop.apps.MimeConstants;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
+import org.jxls.builder.JxlsOutputFile;
+import org.jxls.transform.poi.JxlsPoiTemplateFillerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,22 +66,10 @@ public class DocumentsGenerator {
     public DocumentsGenerator(JdbcTemplateFactory jdbcTemplateFactory) {
         this.jdbcTemplateFactory = jdbcTemplateFactory;
     }
-
-    public byte[] generateFileFromSql(String documentName, Map<String,String> queryParameters) throws IOException, SaxonApiException, SAXException {
-        // In das Verzeichnis wird alles kopiert und die Transformation speichert die 
-        // Dokumente hier.
-        Path outputDirectory = Files.createTempDirectory(Paths.get(workDirectory), folderPrefix);
-        logger.debug(outputDirectory.toString());
-        
-        // Konfiguration aus ini-Datei lesen. 
-        // Man muss definieren welche Datenbank verwendet wird.
-        Properties props = new Properties();
-        props.load(new FileInputStream(Paths.get(configDirectory, documentName + ".ini").toFile()));
-        String dbKey = props.getProperty("db");
-        String formats = props.getProperty("formats");
-                
+    
+    private byte[] generatePdfReport(String reportName, Map<String,String> queryParameters, Path outputDirectory, String dbKey) throws IOException, SAXException, SaxonApiException {
         // SQL-Befehl aus Datei lesen
-        String stmt = Files.readString(Paths.get(configDirectory, documentName+".sql"));
+        String stmt = Files.readString(Paths.get(configDirectory, reportName, reportName+".sql"));
 
         // JdbcTemplate aus Map lesen. Die JdbcTemplates werden beim Starten aus allen DB-Konfigs 
         // aus dem application.properties erstellt.
@@ -106,9 +100,14 @@ public class DocumentsGenerator {
         for (Resource resource : resources) {
             copyResource(resource, outputDirectory);
         }
+
+        // Report kann (aber muss nicht) eigene fopx.conf-Datei haben.
+        File fopXconfFile = Paths.get(configDirectory, reportName, "fop.xconf").toFile();
+        if (!fopXconfFile.exists()) {
+            fopXconfFile = copyResource("fop.xconf", outputDirectory);
+        }
         
-        File fopxconfFile = copyResource("fop.xconf", outputDirectory);
-        File xsltFile = copyResource(documentName+".xsl", outputDirectory);
+        File xsltFile = Paths.get(configDirectory, reportName, reportName+".xsl").toFile();
         
         // Transformation: xml -> fo
         Processor proc = new Processor(false);
@@ -120,11 +119,11 @@ public class DocumentsGenerator {
         trans.setInitialContextNode(source);
 
         // fo -> pdf
-        File pdfFile = Paths.get(outputDirectory.toString(), documentName+".pdf").toFile();
+        File pdfFile = Paths.get(outputDirectory.toString(), reportName+".pdf").toFile();
         ByteArrayOutputStream outPdf = new ByteArrayOutputStream();
 
         synchronized(this) {
-            FopFactory fopFactory = FopFactory.newInstance(fopxconfFile);
+            FopFactory fopFactory = FopFactory.newInstance(fopXconfFile);
 //            OutputStream outPdf = new BufferedOutputStream(new FileOutputStream(pdfFile)); 
             Fop fop = fopFactory.newFop(MimeConstants.MIME_PDF, outPdf);
 
@@ -136,6 +135,94 @@ public class DocumentsGenerator {
         
 //        return pdfFile;
         return outPdf.toByteArray();
+
+    }
+    
+    private byte[] generateXlsxReport(String reportName, Map<String,String> queryParameters, Path outputDirectory, String dbKey) throws IOException {
+        NamedParameterJdbcTemplate jdbcTemplate = jdbcTemplateFactory.getClient(dbKey);
+        if (jdbcTemplate == null) {
+            throw new IllegalArgumentException("database key not found: " + dbKey);
+        }
+
+        // To be defined. Alle sql-Files eruieren.
+        List<Path> sqlFiles = new ArrayList<Path>();
+        try (Stream<Path> walk = Files.walk(Paths.get(configDirectory))) {
+            sqlFiles = walk
+                    .filter(p -> !Files.isDirectory(p))
+                    .filter(f -> {
+                        if (f.toFile().getAbsolutePath().toLowerCase().endsWith("sql")) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    })
+                    .filter(f -> {
+                        if (f.toFile().getAbsolutePath().toLowerCase().contains(reportName+"-")) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }) 
+                    .collect(Collectors.toList());        
+        }
+        
+        logger.debug(sqlFiles.toString());
+
+        Map<String, Object> data = new HashMap<>();
+
+        for (Path sqlFile : sqlFiles) {
+            String stmt = Files.readString(sqlFile);
+            List<Map<String, Object>> result = jdbcTemplate.queryForList(stmt, queryParameters);
+            logger.debug(result.toString());
+                        
+            String sqlFileName = sqlFile.getFileName().toString().substring(sqlFile.getFileName().toString().lastIndexOf("-")+1);
+            String sqlContextName = sqlFileName.replace(".sql", "");
+                    
+            logger.debug(sqlContextName);
+            
+            data.put(sqlContextName, result);
+        }
+
+        // TODO: Dummy. Remove!
+        data.put("singlevalue", "Einzelner Wert. Aber wie generisch machen?");
+        
+        File xlsxOutFile = Paths.get(outputDirectory.toString(), reportName+".xlsx").toFile();
+
+        JxlsPoiTemplateFillerBuilder.newInstance()
+                .withTemplate(Paths.get(configDirectory, reportName, reportName+".xlsx").toString())
+                .build()
+                .fill(data, new JxlsOutputFile(xlsxOutFile));
+
+        return new FileInputStream(xlsxOutFile).readAllBytes();
+    }    
+
+    public byte[] generateFile(String reportName, Map<String,String> queryParameters) throws IOException, SaxonApiException, SAXException {
+        // In das Verzeichnis wird alles kopiert und die Transformation speichert die 
+        // Dokumente hier.
+        Path outputDirectory = Files.createTempDirectory(Paths.get(workDirectory), folderPrefix);
+        logger.debug(outputDirectory.toString());
+        
+        // Konfiguration aus ini-Datei lesen. 
+        // Man muss definieren, welche Datenbank verwendet wird.
+        // Umgang mit Format nicht gefestigt. Momentan wird geprüft,
+        // ob das requestete Format das unterstützte Format ist.
+        Properties props = new Properties();
+        props.load(new FileInputStream(Paths.get(configDirectory, reportName, reportName + ".ini").toFile()));
+        String dbKey = props.getProperty("db");
+        String format = props.getProperty("format");
+                
+        String formatQueryParam = queryParameters.get("format");
+        if (!format.equalsIgnoreCase(formatQueryParam)) {
+            throw new IllegalArgumentException("Requested format is not supported by report.");
+        }
+        
+        if (format.equalsIgnoreCase(AppConstants.PARAM_CONST_PDF)) {
+            return this.generatePdfReport(reportName, queryParameters, outputDirectory, dbKey);
+        } else if (format.equalsIgnoreCase(AppConstants.PARAM_CONST_XLSX)) {
+            return this.generateXlsxReport(reportName, queryParameters, outputDirectory, dbKey);
+        } else {
+            throw new IllegalArgumentException("should not reach here");
+        }   
     }
     
     private File copyResource(Resource resource, Path outputFolder) throws IOException {
