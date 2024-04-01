@@ -1,5 +1,7 @@
 # dox43
 
+Branch mit docx4j
+
 ```
 java -jar /Users/stefan/apps/ili2pg-5.1.0/ili2pg-5.1.0.jar --dbhost localhost --dbport 54322 --dbdatabase pub --strokeArcs --defaultSrsCode 2056 --nameByTopic --createBasketCol --createDatasetCol --dbusr postgres --dbpwd secret --dbschema agi_mopublic_pub --models SO_AGI_MOpublic_20240202 --setupPgExt --schemaimport
 
