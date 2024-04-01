@@ -3,9 +3,6 @@ package ch.so.agi.dox43;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jodconverter.core.DocumentConverter;
-import org.jodconverter.core.office.OfficeManager;
-import org.jodconverter.local.LocalConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -16,8 +13,6 @@ import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
-
-import com.sun.star.beans.PropertyValue;
 
 @SpringBootApplication(exclude={DataSourceAutoConfiguration.class})
 //@Configuration
