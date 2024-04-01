@@ -2,6 +2,9 @@
 
 Für docx4j-Code siehe Branch.
 
+
+Import für Grundbuchbeschrieb:
+
 ```
 java -jar /Users/stefan/apps/ili2pg-5.1.0/ili2pg-5.1.0.jar --dbhost localhost --dbport 54322 --dbdatabase pub --strokeArcs --defaultSrsCode 2056 --nameByTopic --createBasketCol --createDatasetCol --dbusr postgres --dbpwd secret --dbschema agi_mopublic_pub --models SO_AGI_MOpublic_20240202 --setupPgExt --schemaimport
 
@@ -16,5 +19,5 @@ java -jar build/libs/dox43-0.0.LOCALBUILD.jar --spring.profiles.active=dev --spr
 ```
 
 ```
-docker run -p 8080:8080 -e SPRING_CONFIG_LOCATION=file:///config/application-dev.properties,classpath:application.properties -e SPRING_PROFILES_ACTIVE=dev -v $PWD:/config sogis/dox43
+docker run -p 8080:8080 -e SPRING_CONFIG_LOCATION=file:///config/application-dev.properties,classpath:application.properties -e SPRING_PROFILES_ACTIVE=dev -e WORK_DIRECTORY=/tmp/ -e CONFIG_DIRECTORY=/config  -v $PWD/infra-dev:/config sogis/dox43
 ```
