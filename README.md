@@ -13,3 +13,7 @@ Für lokales Entwickeln mit Docker Image:
 ```
 https://www.baeldung.com/spring-properties-file-outside-jar#load-config-environment-var
 ```
+
+```
+java -jar build/libs/dox43-0.0.LOCALBUILD.jar --spring.profiles.active=dev --spring.config.location=application-dev.properties,classpath:application.properties
+```
