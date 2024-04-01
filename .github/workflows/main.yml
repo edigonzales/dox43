@@ -11,8 +11,8 @@ jobs:
     env:
       DOCKER_ACCOUNT: sogis
       DOCKER_REPO: dox43
-      DOCKER_PASSWORD: ${{secrets.DOCKER_HUB_ACCESS_TOKEN}}
-      DOCKER_USERNAME: ${{secrets.DOCKER_HUB_USERNAME}} 
+      DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+      DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}} 
       BUILD_NUMBER: ${{ github.run_number }}
       VERSION: 0.0.${{ github.run_number }}
 
