@@ -162,24 +162,29 @@ public class ReportsGenerator {
                     }) 
                     .collect(Collectors.toList());        
         }
-        logger.debug(sqlFiles.toString());
+        logger.debug("sqlFiles: {}", sqlFiles.toString());
 
         Map<String, Object> data = new HashMap<>();
 
         for (Path sqlFile : sqlFiles) {
-            String stmt = Files.readString(sqlFile);
-            List<Map<String, Object>> result = jdbcTemplate.queryForList(stmt, queryParameters);
-            logger.debug(result.toString());
-                        
             String sqlFileName = sqlFile.getFileName().toString().substring(sqlFile.getFileName().toString().lastIndexOf("-")+1);
             String sqlContextName = sqlFileName.replace(".sql", "");
-            logger.debug(sqlContextName);
+            logger.debug("sqlContextName: {}", sqlContextName);
+
+            String stmt = Files.readString(sqlFile);
+            List<Map<String, Object>> result = jdbcTemplate.queryForList(stmt, queryParameters);
+            
+            if (result.size() > 0) {
+                logger.debug("attributes: {}", result.get(0).keySet().toString());                
+            } else {
+                logger.debug("no records returned");
+            }
             
             data.put(sqlContextName, result);
         }
 
         // TODO: Dummy. Remove!
-        data.put("singlevalue", "Einzelner Wert. Aber wie generisch machen?");
+        // data.put("singlevalue", "Einzelner Wert. Aber wie generisch machen?");
         
         File xlsxOutFile = Paths.get(outputDirectory.toString(), reportName+".xlsx").toFile();
 

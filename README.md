@@ -1,5 +1,8 @@
 # dox43
 
+Beispiele: Siehe ReportsController.
+
+
 Für docx4j-Code siehe Branch.
 
 
@@ -21,3 +24,8 @@ java -jar build/libs/dox43-0.0.LOCALBUILD.jar --spring.profiles.active=dev --spr
 ```
 docker run -p 8080:8080 -e SPRING_CONFIG_LOCATION=file:///config/application-dev.properties,classpath:application.properties -e SPRING_PROFILES_ACTIVE=dev -e WORK_DIRECTORY=/tmp/ -e CONFIG_DIRECTORY=/config  -v $PWD/infra-dev:/config sogis/dox43
 ```
+
+
+## Conditional Formatting
+
+Zwei Varianten: Entweder via "Conditional Formatting" in Excel. Habe damit gekämpft. Liegt aber auch vielleicht an mir. Mit einer schnöden Formal, z.B. $C$3 > 1000, habe ich es nicht zum Laufen gebracht. Dafür aber wenn ich die Formel quasi zusammenklicke. Siehe "Grundstück"-Mappe. Die andere Variante ist mittels JXLS-Expression. Siehe https://jxls.sourceforge.net/if.html und Mappe "Grundstücke_if". Dann kann ich aber (momentan ?) keine Summe berechnen (https://github.com/jxlsteam/jxls/discussions/330).

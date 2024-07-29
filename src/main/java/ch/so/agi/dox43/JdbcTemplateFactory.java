@@ -36,14 +36,14 @@ public class JdbcTemplateFactory {
             Driver driver = (Driver)Class.forName(dsc.getDriverClassName()).getDeclaredConstructor().newInstance();
             
             SimpleDriverDataSource dataSource = new SimpleDriverDataSource();
-            dataSource.setDriver(driver);
+            dataSource.setDriver(driver);            
             dataSource.setUrl(dsc.getUrl());
             dataSource.setUsername(dsc.getUsername());
             dataSource.setPassword(dsc.getPassword());
          
             NamedParameterJdbcTemplate jdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
             jdbcTemplates.put(dsc.getKey(), jdbcTemplate);
-        }
+        }        
     }
     
     public NamedParameterJdbcTemplate getClient(String key) {
