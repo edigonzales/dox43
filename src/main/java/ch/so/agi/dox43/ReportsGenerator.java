@@ -200,7 +200,7 @@ public class ReportsGenerator {
         // In das Verzeichnis wird alles kopiert und die Transformation speichert die 
         // Dokumente hier.
         Path outputDirectory = Files.createTempDirectory(Paths.get(workDirectory), folderPrefix);
-        logger.debug(outputDirectory.toString());
+        logger.debug("outputDirectory: {}", outputDirectory.toString());
         
         // Konfiguration aus ini-Datei lesen. 
         // Man muss definieren, welche Datenbank verwendet wird.
